@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+
+<body>
+<h1>
+    Sample Client
+</h1>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script>
+
+    async function callTest() {
+        const response = await axios.get("http://localhost:8080/api/sample/doA") // GET 요청을 보내고 결과값을 response 에 넣음
+        return response.data // response data 값에 데이터 존재
+    }
+
+    callTest() // 함수 호출
+        .then(data => console.log(data))
+        .catch(e => console.log(e));
+</script>
+</body>
+</html>
