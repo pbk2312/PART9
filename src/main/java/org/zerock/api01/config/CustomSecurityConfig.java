@@ -19,6 +19,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.zerock.api01.security.APIUserDetailsService;
 import org.zerock.api01.security.filter.APILoginFilter;
+import org.zerock.api01.security.handler.APILoginSuccessHandler;
+import org.zerock.api01.util.JWTUtil;
 
 
 // 시큐리티 설정
@@ -31,6 +33,7 @@ public class CustomSecurityConfig {
 
     // 주입
     private final APIUserDetailsService apiUserDetailsService;
+    private final JWTUtil jwtUtil;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -52,44 +55,42 @@ public class CustomSecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-        // AuthenticationManager 설정
+
+        log.info("-----------------------configuration---------------------");
+
+        //AuthenticationManager설정
         AuthenticationManagerBuilder authenticationManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
-
-        authenticationManagerBuilder.userDetailsService(apiUserDetailsService)
-                .passwordEncoder(passwordEncoder());
-
-
+        authenticationManagerBuilder.userDetailsService(apiUserDetailsService).passwordEncoder(passwordEncoder());
         // Get AuthenticationManager
         AuthenticationManager authenticationManager = authenticationManagerBuilder.build();
 
-        // 반드시 필요
+        //반드시 필요
         http.authenticationManager(authenticationManager);
 
-        // APILoginFilter
-        APILoginFilter apiLoginFilter = new APILoginFilter("/generateToken"); // generateToken 경로 지정
+        //APILoginFilter
+        APILoginFilter apiLoginFilter = new APILoginFilter("/generateToken");
         apiLoginFilter.setAuthenticationManager(authenticationManager);
 
-        // APILoginFilter 의 위치 조정
+
+        //APILoginSuccessHandler
+        APILoginSuccessHandler successHandler = new APILoginSuccessHandler(jwtUtil);
+        //SuccessHandler 세팅
+        apiLoginFilter.setAuthenticationSuccessHandler(successHandler);
+
+        //APILoginFilter의 위치 조정
         http.addFilterBefore(apiLoginFilter, UsernamePasswordAuthenticationFilter.class);
 
 
-        // 로그인 하지 않아도 볼 수 있도록 설정
+        http.csrf(httpSecurityCsrfConfigurer -> httpSecurityCsrfConfigurer.disable());
 
-        // /login 으로 리다이엑트 X
-
-        log.info("------configure--------");
-
-
-        http.csrf(httpSecurityCsrfConfigurer -> httpSecurityCsrfConfigurer.disable()); // CSRF 토큰 비활성화
         http.sessionManagement(httpSecuritySessionManagementConfigurer -> {
             httpSecuritySessionManagementConfigurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-        }); // 세션을 사용하지 않음
+        });
 
 
         return http.build();
-
-
     }
-
-
 }
+
+
+

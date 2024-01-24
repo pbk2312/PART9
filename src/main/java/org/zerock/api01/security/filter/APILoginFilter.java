@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
@@ -26,27 +27,29 @@ public class APILoginFilter extends AbstractAuthenticationProcessingFilter {
     }
 
     @Override
-    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException
-            , IOException, ServletException {
+    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
+            throws AuthenticationException, IOException, ServletException {
 
-        log.info("APILoginFilter--------");
+        log.info("APILoginFilter-----------------------------------");
 
         if (request.getMethod().equalsIgnoreCase("GET")) {
             log.info("GET METHOD NOT SUPPORT");
             return null;
         }
-        Map<String, String> jsonData = paraRequestJSON(request);
 
-        log.info(jsonData);
+        Map<String, String> jsonData = parseRequestJSON(request);
 
-        return null;
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                jsonData.get("mid"), jsonData.get("mpw")); // 인증 정보 만들기
 
+
+        return getAuthenticationManager().authenticate(authenticationToken);
 
     }
 
-    private Map<String, String> paraRequestJSON(HttpServletRequest request) {
+    private Map<String, String> parseRequestJSON(HttpServletRequest request) {
 
-        // JSON 데이터를 분석해서 mid, mpw 전달 값을 Map 으로 처리
+        //JSON 데이터를 분석해서 mid, mpw 전달 값을 Map으로 처리
         try (Reader reader = new InputStreamReader(request.getInputStream())) {
 
             Gson gson = new Gson();
@@ -56,9 +59,7 @@ public class APILoginFilter extends AbstractAuthenticationProcessingFilter {
         } catch (Exception e) {
             log.error(e.getMessage());
         }
-
         return null;
-
     }
 
 
