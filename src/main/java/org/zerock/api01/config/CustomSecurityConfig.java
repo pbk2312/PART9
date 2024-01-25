@@ -19,6 +19,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.zerock.api01.security.APIUserDetailsService;
 import org.zerock.api01.security.filter.APILoginFilter;
+import org.zerock.api01.security.filter.RefreshTokenFilter;
+import org.zerock.api01.security.filter.TokenCheckFilter;
 import org.zerock.api01.security.handler.APILoginSuccessHandler;
 import org.zerock.api01.util.JWTUtil;
 
@@ -53,10 +55,23 @@ public class CustomSecurityConfig {
 
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
 
 
         log.info("-----------------------configuration---------------------");
+
+        // api 로 시작하는  모든 경로는 TokenCheckFilter 동작
+        http.addFilterBefore(
+                tokenCheckFilter(jwtUtil),
+                UsernamePasswordAuthenticationFilter.class
+
+        );
+
+        //refreshToken 호출 처리
+        http.addFilterBefore(new RefreshTokenFilter("/refreshToken", jwtUtil),
+                TokenCheckFilter.class);
+
+
 
         //AuthenticationManager설정
         AuthenticationManagerBuilder authenticationManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
@@ -89,6 +104,11 @@ public class CustomSecurityConfig {
 
 
         return http.build();
+    }
+
+    private TokenCheckFilter tokenCheckFilter(JWTUtil jwtUtil) {
+        return new TokenCheckFilter(jwtUtil);
+
     }
 }
 
